@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/png" href="Flower.png">
+    <meta name="theme-color" content="#1a1a1a">
+    
+    <title>Tally Counter</title>
+    <style>
+        :root {
+            /* Black background, White text */
+            --background-dark: #1a1a1a;
+            --text-light: #ffffff;
+            
+            /* Pastel-inspired accent colors for high contrast on black */
+            --accent-pink-dark: #ff6e8a; /* South/Decrement */
+            --accent-green: #90ee90;
+            --accent-blue: #87cefa;
+            --accent-yellow: #ffd700;
+            --neutral-grey: #666666; /* Reset */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 25px;
+        }
+
+        /* --- Main Counter Grid --- */
+        .counter-grid {
+            display: grid;
+            grid-template-areas:
+                ". north ."
+                "west count east"
+                ". south .";
+            gap: 15px;
+            width: 280px;
+            max-width: 90%;
+            margin-bottom: 30px;
+        }
+
+        .count-display {
+            grid-area: count;
+            font-size: 3.5em;
+            font-weight: bold;
+            padding: 20px 10px;
+            border: 2px solid var(--accent-pink-dark);
+            border-radius: 12px;
+            background-color: #333333; /* Darker grey background for the count */
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+
+        /* --- Buttons --- */
+        button {
+            padding: 18px 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            color: var(--background-dark); /* Dark text on bright buttons */
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4); 
+        }
+
+        /* Directional Buttons */
+        #north-btn { grid-area: north; background-color: var(--accent-green); }
+        #south-btn { grid-area: south; background-color: var(--accent-pink-dark); color: var(--text-light); } 
+        #east-btn { grid-area: east; background-color: var(--accent-blue); }
+        #west-btn { grid-area: west; background-color: var(--accent-yellow); }
+        
+        /* Utility Buttons */
+        .utility-buttons {
+            display: flex;
+            gap: 20px;
+        }
+        #decrement-btn {
+            background-color: var(--accent-pink-dark);
+            color: var(--text-light); 
+        }
+        #reset-btn {
+            background-color: var(--neutral-grey);
+            color: var(--text-light);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.6);
+        }
+        button:active, button.active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            filter: brightness(0.8);
+        }
+
+        /* --- Tally Breakdown Section --- */
+        .tally-breakdown {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid var(--neutral-grey);
+            border-radius: 8px;
+            width: 250px;
+            text-align: left;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+        .tally-breakdown p {
+            margin: 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .key-hints {
+            margin-top: 40px;
+            font-size: 0.9em;
+            color: var(--neutral-grey);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Counter</h1>
+
+    <div class="counter-grid">
+        <button id="north-btn" onclick="increment('north')">N</button>
+        <div id="total-count" class="count-display">0</div>
+        <button id="east-btn" onclick="increment('east')">E</button>
+        <button id="west-btn" onclick="increment('west')">W</button>
+        <button id="south-btn" onclick="increment('south')">S</button>
+    </div>
+
+    <div class="utility-buttons">
+        <button id="decrement-btn" onclick="decrement()">–</button>
+        <button id="reset-btn" onclick="resetCounts()">R</button>
+    </div>
+    
+    <div class="tally-breakdown">
+        <p>North: <span id="north-count">0</span></p>
+        <p>East: <span id="east-count">0</span></p>
+        <p>South: <span id="south-count">0</span></p>
+        <p>West: <span id="west-count">0</span></p>
+    </div>
+
+    <div class="key-hints">
+        ⬆️ N | ⬇️ S | ⬅️ W | ➡️ E<br>
+        Backspace – | R Reset
+    </div>
+
+    <script>
+        // Initialize the counter objects
+        let counts = {
+            north: 0,
+            south: 0,
+            east: 0,
+            west: 0,
+            total: 0
+        };
+
+        // Function to update the tally
+        function increment(direction) {
+            counts[direction]++;
+            counts.total++;
+            updateDisplay();
+
+            // Visual feedback
+            const btn = document.getElementById(direction + '-btn');
+            if (btn) {
+                btn.classList.add('active');
+                setTimeout(() => {
+                    btn.classList.remove('active');
+                }, 100);
+            }
+        }
+
+        // --- UPDATED DECREMENT LOGIC ---
+        function decrement() {
+            // 1. Check if total count is greater than zero
+            if (counts.total > 0) {
+                
+                // 2. Identify all directions with a count greater than zero
+                const directions = ['north', 'east', 'south', 'west'];
+                let highestCount = -1;
+                let directionToDecrement = '';
+                
+                // 3. Find the direction with the highest count to decrement
+                //    This is a simple way to maintain balance.
+                for (const direction of directions) {
+                    if (counts[direction] > highestCount) {
+                        highestCount = counts[direction];
+                        directionToDecrement = direction;
+                    }
+                }
+
+                // 4. Perform the decrement on both the individual direction and the total
+                if (directionToDecrement && counts[directionToDecrement] > 0) {
+                    counts[directionToDecrement]--;
+                    counts.total--;
+                    updateDisplay();
+                } else if (counts.total > 0) {
+                    // Fallback in case of unexpected logic error, though shouldn't happen
+                    counts.total--;
+                    updateDisplay();
+                }
+
+                // Visual feedback for the decrement button
+                const btn = document.getElementById('decrement-btn');
+                btn.classList.add('active');
+                setTimeout(() => {
+                    btn.classList.remove('active');
+                }, 100);
+            }
+        }
+        // -------------------------------
+
+        // Function to refresh the HTML display
+        function updateDisplay() {
+            document.getElementById('total-count').textContent = counts.total;
+            
+            // Update individual tallies
+            document.getElementById('north-count').textContent = counts.north;
+            document.getElementById('south-count').textContent = counts.south;
+            document.getElementById('east-count').textContent = counts.east;
+            document.getElementById('west-count').textContent = counts.west;
+        }
+
+        // Function to reset all counts
+        function resetCounts() {
+            counts.north = 0;
+            counts.south = 0;
+            counts.east = 0;
+            counts.west = 0;
+            counts.total = 0;
+            updateDisplay();
+
+            // Visual feedback for reset button
+            const btn = document.getElementById('reset-btn');
+            btn.classList.add('active');
+            setTimeout(() => {
+                btn.classList.remove('active');
+            }, 100);
+        }
+
+        // Initial display update
+        updateDisplay();
+
+        // -----------------------------------------------------
+        // KEYBOARD INPUT LOGIC
+        // -----------------------------------------------------
+
+        document.addEventListener('keydown', (event) => {
+            let key = event.key;
+
+            switch (key) {
+                case 'ArrowUp':
+                    increment('north');
+                    event.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    increment('south');
+                    event.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    increment('west');
+                    event.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    increment('east');
+                    event.preventDefault();
+                    break;
+                case 'Backspace':
+                    decrement();
+                    event.preventDefault();
+                    break;
+                case 'r':
+                case 'R':
+                    resetCounts();
+                    event.preventDefault();
+                    break;
+                default:
+                    return;
+            }
+        });
+    </script>
+</body>
+</html>
